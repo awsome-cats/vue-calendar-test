@@ -21,8 +21,11 @@
                     {{ day.day}}
                 </div>
                 <!-- event配列 -->
-                <div class="calendar-event" v-for="dayEvent in day.dayEvents" :key="dayEvent.id">
-                    <div class="calendar-event" :style="`background-color:${dayEvent.color}`">
+                <!-- draggable属性 -->
+                <div class="calendar-event" 
+                :style="`width:${dayEvent.width}%; background-color:${dayEvent.color}`"
+                v-for="dayEvent in day.dayEvents" :key="dayEvent.id">
+                    <div class="calendar-event" draggable="true" :style="`background-color:${dayEvent.color}`">
                         {{dayEvent.name}}
                     </div>
                 </div>
@@ -93,20 +96,40 @@ export default {
     },
 
     methods: {
+        // widthを返す
+        getEventWidth(end, start, day) {
+            let betweenDays = moment(end).diff(moment(start), 'days')
+            if (betweenDays > 6 - day) {
+                return (6 - day) * 100 + 95;
+            } else {
+                return betweenDays * 100 + 95
+            }
+        },
         // イベントを取得するメソッド
         // filteringされるデータの特定を行う
-        getDayEvents (date) {
-            return this.events.filter(event => {
+        getDayEvents (date, day) {
+            let dayEvents = []
+            this.events.forEach(event => {
             // events配列のstartプロパティにformat関数で変換
             let startDate = moment(event.start).format('YYYY-MM-DD')
             // console.log('startDate', startDate) // events配列のstartのあたいのみにfilteringする
             // events配列のendプロパティにformat関数で変換
             let endDate = moment(event.end).format('YYYY-MM-DD')
+
             // console.log('endDate', endDate)
             // dateに渡ってきているのはcurrentDate
             let Date = date.format('YYYY-MM-DD')
-            if (startDate <= Date && endDate >= Date) return true;
-            })
+
+            if (startDate <= Date && endDate >= Date) {
+                let width = this.getEventWidth(startDate, endDate, day)
+                dayEvents.push({...event, width})
+                console.log('dayEvents', dayEvents) // width: 95が追加された
+            } else if(day === 0) {
+                let width = this.getEventWidth(startDate, endDate, day)
+                dayEvents.push({...event, width})
+            }
+          })
+          return dayEvents;
         },
         // currentDateが変更したときに動的に表示を変更するメソッド
         nextMonth () {
